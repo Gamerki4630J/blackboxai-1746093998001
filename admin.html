@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Questions Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+      min-height: 100vh;
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen justify-center items-center p-4 bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100">
+
+  <section class="max-w-3xl w-full bg-white rounded-xl shadow-lg p-6 space-y-6 overflow-auto max-h-[80vh]">
+    <h1 class="text-3xl font-semibold text-center text-gray-800 mb-4">Admin Panel <span class="inline-block animate-pulse">💗</span></h1>
+    <div class="mb-4 flex space-x-2">
+      <input type="password" id="adminPassword" placeholder="Enter admin password" class="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-400" />
+      <button id="loginBtn" class="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-4 py-2 rounded-md transition-colors duration-300">Login</button>
+    </div>
+    <input type="text" id="searchInput" placeholder="Search questions or Instagram IDs" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-400 mb-4 hidden" />
+    <ul id="questionsList" class="space-y-3 text-gray-700 text-sm"></ul>
+    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors duration-300 hidden">Logout</button>
+  </section>
+
+  <script>
+    // Firebase config placeholder - replace with your own config
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const ADMIN_PASSWORD = 'admin123'; // Change this password as needed
+
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const adminPasswordInput = document.getElementById('adminPassword');
+    const searchInput = document.getElementById('searchInput');
+    const questionsList = document.getElementById('questionsList');
+
+    let questionsData = [];
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderQuestions(filter = '') {
+      questionsList.innerHTML = '';
+      const filtered = questionsData.filter(q =>
+        q.question.toLowerCase().includes(filter.toLowerCase()) ||
+        q.instagramId.toLowerCase().includes(filter.toLowerCase())
+      );
+      if (filtered.length === 0) {
+        questionsList.innerHTML = '<li class="text-center text-gray-500">No questions found.</li>';
+        return;
+      }
+      filtered.forEach(q => {
+        const li = document.createElement('li');
+        li.className = 'border border-gray-300 rounded-md p-3 bg-pink-50';
+        li.innerHTML = `
+          <div class="font-semibold text-pink-600 break-words">Q: ${escapeHtml(q.question)}</div>
+          <div class="text-xs text-gray-500 mt-1">From: <span class="font-mono">${escapeHtml(q.instagramId)}</span> | ${new Date(q.timestamp).toLocaleString()}</div>
+        `;
+        questionsList.appendChild(li);
+      });
+    }
+
+    async function fetchQuestions() {
+      try {
+        const snapshot = await db.collection('questions').orderBy('timestamp', 'desc').get();
+        questionsData = snapshot.docs.map(doc => doc.data());
+        renderQuestions();
+      } catch (error) {
+        alert('Error fetching questions. Please try again later.');
+        console.error(error);
+      }
+    }
+
+    loginBtn.addEventListener('click', () => {
+      const enteredPassword = adminPasswordInput.value;
+      if (enteredPassword === ADMIN_PASSWORD) {
+        adminPasswordInput.classList.add('hidden');
+        loginBtn.classList.add('hidden');
+        searchInput.classList.remove('hidden');
+        logoutBtn.classList.remove('hidden');
+        fetchQuestions();
+      } else {
+        alert('Incorrect password.');
+      }
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      adminPasswordInput.classList.remove('hidden');
+      loginBtn.classList.remove('hidden');
+      searchInput.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+      questionsList.innerHTML = '';
+      adminPasswordInput.value = '';
+    });
+
+    searchInput.addEventListener('input', e => {
+      renderQuestions(e.target.value);
+    });
+  </script>
+</body>
+</html>
