@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ask Me Anything 💬</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+      min-height: 100vh;
+    }
+    .fade-enter {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .fade-enter-active {
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 300ms, transform 300ms;
+    }
+    .fade-exit {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .fade-exit-active {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 300ms, transform 300ms;
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen justify-center items-center p-4 bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100">
+
+  <!-- Home Page -->
+  <section id="homePage" class="max-w-md w-full bg-white rounded-xl shadow-lg p-6 space-y-6">
+    <h1 class="text-3xl font-semibold text-center text-gray-800">Ask Me Anything <span class="inline-block animate-bounce">💬</span></h1>
+    <p class="text-center text-gray-600">Drop your questions below — it’s anonymous! <span class="text-pink-500">😉</span></p>
+    <form id="questionForm" class="space-y-4">
+      <!-- Instagram ID disguised input -->
+      <input type="text" id="instagramId" name="instagramId" placeholder="Your Instagram ID (optional)" autocomplete="off" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-400" />
+      <textarea id="questionText" name="questionText" rows="4" placeholder="Your Question" required class="w-full px-4 py-2 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-pink-400"></textarea>
+      <button type="submit" class="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 rounded-md transition-colors duration-300 flex justify-center items-center space-x-2">
+        <span>Submit</span>
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </form>
+    <div class="mt-4 text-center text-sm text-gray-500 italic">* Instagram ID is kept hidden from others</div>
+  </section>
+
+  <!-- Submission Page -->
+  <section id="submissionPage" class="max-w-md w-full bg-white rounded-xl shadow-lg p-6 space-y-6 hidden text-center">
+    <div class="text-2xl font-semibold text-gray-800">Thanks for dropping your question! <span class="inline-block animate-pulse">😄</span></div>
+    <p class="text-gray-600">Come back later to see if I’ve answered it.</p>
+    <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Success" class="mx-auto w-24 h-24" />
+  </section>
+
+  <!-- Admin Page -->
+  <section id="adminPage" class="max-w-md w-full bg-white rounded-xl shadow-lg p-6 space-y-4 hidden overflow-auto max-h-[80vh]">
+    <h2 class="text-2xl font-semibold text-center text-gray-800 mb-4">Admin Panel</h2>
+    <div class="mb-4 flex space-x-2">
+      <input type="text" id="searchInput" placeholder="Search questions or Instagram IDs" class="flex-grow px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-400" />
+      <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition-colors duration-300">Logout</button>
+    </div>
+    <ul id="questionsList" class="space-y-3 text-gray-700 text-sm">
+      <!-- Questions will be appended here -->
+    </ul>
+  </section>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confettiCanvas" class="fixed top-0 left-0 w-full h-full pointer-events-none" style="z-index: 9999;"></canvas>
+
+  <script>
+    // Simple fade toggle helper
+    function fadeToggle(showEl, hideEl) {
+      if (hideEl) hideEl.classList.add('hidden');
+      if (showEl) showEl.classList.remove('hidden');
+    }
+
+    // Confetti animation (simple)
+    const confettiCanvas = document.getElementById('confettiCanvas');
+    const ctx = confettiCanvas.getContext('2d');
+    let confettiPieces = [];
+    let confettiAnimationFrame;
+
+    function resizeCanvas() {
+      confettiCanvas.width = window.innerWidth;
+      confettiCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function randomRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    class ConfettiPiece {
+      constructor() {
+        this.x = randomRange(0, confettiCanvas.width);
+        this.y = randomRange(-20, confettiCanvas.height);
+        this.size = randomRange(5, 10);
+        this.speed = randomRange(1, 3);
+        this.angle = randomRange(0, 2 * Math.PI);
+        this.spin = randomRange(0.05, 0.1);
+        this.color = `hsl(${randomRange(0, 360)}, 70%, 60%)`;
+      }
+      update() {
+        this.y += this.speed;
+        this.angle += this.spin;
+        if (this.y > confettiCanvas.height) {
+          this.y = -10;
+          this.x = randomRange(0, confettiCanvas.width);
+        }
+      }
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.fillStyle = this.color;
+        ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size / 2);
+        ctx.restore();
+      }
+    }
+
+    function createConfetti() {
+      confettiPieces = [];
+      for (let i = 0; i < 100; i++) {
+        confettiPieces.push(new ConfettiPiece());
+      }
+    }
+
+    function animateConfetti() {
+      ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      confettiPieces.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      confettiAnimationFrame = requestAnimationFrame(animateConfetti);
+    }
+
+    function startConfetti() {
+      createConfetti();
+      animateConfetti();
+      setTimeout(() => {
+        cancelAnimationFrame(confettiAnimationFrame);
+        ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      }, 4000);
+    }
+
+    // Data storage keys
+    const STORAGE_KEY = 'instagramQuestions';
+
+    // Save question to localStorage
+    function saveQuestion(instagramId, question) {
+      const questions = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      questions.push({
+        instagramId: instagramId || 'Anonymous',
+        question,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(questions));
+    }
+
+    // Render questions in admin panel
+    function renderQuestions(filter = '') {
+      const questionsList = document.getElementById('questionsList');
+      const questions = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      questionsList.innerHTML = '';
+      const filtered = questions.filter(q =>
+        q.question.toLowerCase().includes(filter.toLowerCase()) ||
+        q.instagramId.toLowerCase().includes(filter.toLowerCase())
+      );
+      if (filtered.length === 0) {
+        questionsList.innerHTML = '<li class="text-center text-gray-500">No questions found.</li>';
+        return;
+      }
+      filtered.forEach(q => {
+        const li = document.createElement('li');
+        li.className = 'border border-gray-300 rounded-md p-3 bg-pink-50';
+        li.innerHTML = `
+          <div class="font-semibold text-pink-600 break-words">Q: ${escapeHtml(q.question)}</div>
+          <div class="text-xs text-gray-500 mt-1">From: <span class="font-mono">${escapeHtml(q.instagramId)}</span> | ${new Date(q.timestamp).toLocaleString()}</div>
+        `;
+        questionsList.appendChild(li);
+      });
+    }
+
+    // Escape HTML to prevent XSS
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Admin password (simple)
+    const ADMIN_PASSWORD = 'admin123';
+
+    // Show admin page after password prompt
+    function showAdminPage() {
+      const password = prompt('Enter admin password:');
+      if (password === ADMIN_PASSWORD) {
+        fadeToggle(document.getElementById('adminPage'), document.getElementById('homePage'));
+        fadeToggle(document.getElementById('adminPage'), document.getElementById('submissionPage'));
+        renderQuestions();
+      } else {
+        alert('Incorrect password.');
+      }
+    }
+
+    // Logout admin
+    function logoutAdmin() {
+      fadeToggle(document.getElementById('homePage'), document.getElementById('adminPage'));
+      fadeToggle(document.getElementById('submissionPage'), document.getElementById('adminPage'));
+    }
+
+    // Event listeners
+    document.getElementById('questionForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const instagramId = document.getElementById('instagramId').value.trim();
+      const questionText = document.getElementById('questionText').value.trim();
+      if (!questionText) return;
+      saveQuestion(instagramId, questionText);
+      startConfetti();
+      fadeToggle(document.getElementById('submissionPage'), document.getElementById('homePage'));
+      fadeToggle(document.getElementById('submissionPage'), document.getElementById('adminPage'));
+      // Clear form
+      e.target.reset();
+    });
+
+    document.getElementById('searchInput').addEventListener('input', e => {
+      renderQuestions(e.target.value);
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      logoutAdmin();
+    });
+
+    // Keyboard shortcut to open admin page: Ctrl+Shift+A
+    document.addEventListener('keydown', e => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+        showAdminPage();
+      }
+    });
+  </script>
+</body>
+</html>
